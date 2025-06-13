@@ -1,0 +1,48 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/wow_consulting}
+      database: wow_consulting
+
+  security:
+    oauth2:
+      client:
+        registration:
+          discord:
+            client-id: ${DISCORD_CLIENT_ID}
+            client-secret: ${DISCORD_CLIENT_SECRET}
+            scope: identify, guilds
+            authorization-grant-type: authorization_code
+            redirect-uri: ${DISCORD_REDIRECT_URI:http://localhost:3000/auth/callback}
+        provider:
+          discord:
+            authorization-uri: https://discord.com/api/oauth2/authorize
+            token-uri: https://discord.com/api/oauth2/token
+            user-info-uri: https://discord.com/api/users/@me
+            user-name-attribute: username
+
+discord:
+  client-id: ${DISCORD_CLIENT_ID}
+  client-secret: ${DISCORD_CLIENT_SECRET}
+  redirect-uri: ${DISCORD_REDIRECT_URI:http://localhost:3000/auth/callback}
+  bot:
+    token: ${DISCORD_BOT_TOKEN}
+    guild-id: ${DISCORD_GUILD_ID:296478616198316053}
+    required-roles: ${DISCORD_REQUIRED_ROLES:1367627463362084945}
+    admin-roles: ${DISCORD_ADMIN_ROLES:1133113850401673297}
+jwt:
+  secret:  ${JWT_SECRET:mysecretkey}
+  expiration: 86400000 # 24 hours
+
+cors:
+  allowed-origins: ${CORS_ORIGINS:http://localhost:3000}
+
+logging:
+  level:
+    com.wowconsulting: DEBUG
+    org.springframework.security: DEBUG
