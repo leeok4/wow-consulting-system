@@ -69,6 +69,21 @@ public class AppointmentService {
         // Envia notificação via Discord
         sendAppointmentNotification(appointment, timeSlot);
 
+        // Envia notificação ao dono do servidor
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String ownerMessage = String.format(
+            "**Usuário:** %s\n**Data/Hora:** %s\n**BNet ID:** %s\n**Classe:** %s (%s)\n**Nível:** %s\n**Conteúdo Atual:** %s\n**Expectativas:** %s",
+            appointment.getUser().getUsername(),
+            appointment.getScheduledTime().format(formatter),
+            appointment.getBnetId(),
+            appointment.getCharacterClass(),
+            appointment.getSpecialization(),
+            appointment.getKnowledgeLevel(),
+            appointment.getCurrentContent(),
+            appointment.getExpectations()
+        );
+        discordService.sendAppointmentToOwner(ownerMessage);
+
         return appointment;
     }
 
@@ -106,7 +121,21 @@ public class AppointmentService {
         }
         appointment.setUpdatedAt(LocalDateTime.now());
 
-        return appointmentRepository.save(appointment);
+        Appointment updatedAppointment = appointmentRepository.save(appointment);
+
+        // Envia mensagem privada ao usuário se confirmado
+        if (status == Appointment.AppointmentStatus.CONFIRMED) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            String message = String.format(
+                "✅ Sua consultoria foi confirmada para: %s\nClasse: %s (%s)",
+                appointment.getScheduledTime().format(formatter),
+                appointment.getCharacterClass(),
+                appointment.getSpecialization()
+            );
+            discordService.sendAppointmentReminder(appointment.getUser().getDiscordId(), message);
+        }
+
+        return updatedAppointment;
     }
 
     @Transactional
@@ -132,8 +161,17 @@ public class AppointmentService {
             timeSlotRepository.save(timeSlot);
         }
 
-        // Notifica o cancelamento
+        // Notifica o cancelamento (público)
         sendCancellationNotification(appointment, reason);
+
+        // Notifica o usuário no privado
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        String message = String.format(
+            "❌ Sua consultoria marcada para %s foi cancelada. Motivo: %s",
+            appointment.getScheduledTime().format(formatter),
+            reason != null ? reason : "Não informado"
+        );
+        discordService.sendAppointmentReminder(appointment.getUser().getDiscordId(), message);
     }
 
     private void sendAppointmentNotification(Appointment appointment, TimeSlot timeSlot) {
@@ -160,18 +198,14 @@ public class AppointmentService {
     }
 
     private void sendCancellationNotification(Appointment appointment, String reason) {
+        // Não envia mais para o canal público, apenas para o usuário
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        String notificationMessage = String.format(
-                "❌ **Consultoria Cancelada**\n" +
-                        "**Usuário:** %s\n" +
-                        "**Data/Hora:** %s\n" +
-                        "**Motivo:** %s",
-                appointment.getUser().getUsername(),
-                appointment.getScheduledTime().format(formatter),
-                reason != null ? reason : "Não informado"
+        String message = String.format(
+            "❌ Sua consultoria marcada para %s foi cancelada. Motivo: %s",
+            appointment.getScheduledTime().format(formatter),
+            reason != null ? reason : "Não informado"
         );
-
-        discordService.sendAppointmentNotification(notificationMessage);
+        discordService.sendAppointmentReminder(appointment.getUser().getDiscordId(), message);
     }
 
     public void sendReminders() {

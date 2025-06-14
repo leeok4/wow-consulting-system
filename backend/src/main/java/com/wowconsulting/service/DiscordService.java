@@ -181,4 +181,18 @@ public class DiscordService {
             }
         });
     }
+
+    public CompletableFuture<Void> sendAppointmentToOwner(String appointmentInfo) {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                if (guild != null && guild.getOwner() != null) {
+                    guild.getOwner().getUser().openPrivateChannel().queue(channel -> {
+                        channel.sendMessage("🗓️ **Novo agendamento criado!**\n" + appointmentInfo).queue();
+                    });
+                }
+            } catch (Exception e) {
+                System.err.println("Erro ao enviar notificação ao dono: " + e.getMessage());
+            }
+        });
+    }
 }
