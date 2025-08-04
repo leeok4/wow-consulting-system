@@ -26,7 +26,8 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                    .allowedOrigins("http://wow-consulting-frontend.s3-website-sa-east-1.amazonaws.com")
+                    .allowedOrigins("https://wow-consulting-frontend.s3-website-sa-east-1.amazonaws.com",
+                     "https://biscoitao.com")
                     .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                     .allowedHeaders("*");
             }
